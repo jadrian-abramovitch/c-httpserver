@@ -3,12 +3,52 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <string.h>
 
 
-int PORT = 1801;
+int PORT = 1802;
 int BUFFER_SIZE = 1000;
+char *HTML_FILE_NAME = "test1.html";
+
+char * createHttpResponse(int status_code, int content_length, char* response_html) {
+
+    char *response;
+    sprintf(response, "HTTP/1.1 %d\nContent-Length: %d\nContent-Type: text/html\nConnection: Closed\n\n%s", status_code, content_length, response_html);
+    return(response);
+}
+
+long getFileLength(char* file_name) {
+
+    FILE * file; 
+    file = fopen(file_name, "rb");
+    if (file) {
+        printf("file opened! \n");
+    } else {
+        printf("file not opened :( \n");
+    }
+
+    long file_size;
+    fseek(file, 0, SEEK_END); 
+    file_size = ftell(file);
+    return(file_size); 
+}
+
+char * readFile(char* strBuffer, char* file_name, long file_length) {
+
+    FILE * file; 
+    file = fopen(file_name, "rb");
+    if (file) {
+        printf("file opened! \n");
+    } else {
+        printf("file not opened :( \n");
+    }
+
+    fread(strBuffer, file_length, 1, file);
+    fclose(file);
+}
 
 int main() {
+
     printf("Starting Sever \n");
     int server_fd;
     struct sockaddr_in server_addr;
@@ -31,41 +71,8 @@ int main() {
         exit(-1);
     }
 
-    // struct sockaddr_in addr;
-    // socklen_t addr_len;
-    // int connection_fd;
-    // if (connection_fd = accept(server_fd, (struct sockaddr *)&addr, &addr_len) < 0) {
-    //     perror("failed to accept");
-    //     exit(-1);
-    // }
- 
-    // FILE * file; 
-    // file = fopen("index.html", "r");
-    // if (file) {
-    //     printf("file opened!");
-    // } else {
-    //     printf("file not opened :(");
-    // }
-    
-    // fclose(file);   
-    FILE * file; 
-    file = fopen("index.html", "r");
-    if (file) {
-        printf("file opened! \n");
-    } else {
-        printf("file not opened :( \n");
-    }
-    long file_size;
-    fseek(file, 0, SEEK_END); // seek to end of file
-    file_size = ftell(file); // get current file pointer
-    fseek(file, 0, SEEK_SET); // seek back to beginning of file
-    char myString[file_size];
-    int size = 76;
-    char testString[76] = "Content-Type: text/html; charset=utf-8\r\n\r\n \n";
-    fgets(myString, file_size, file);
-
-    
     while (1) {
+
         int connfd;
         struct sockaddr_in addr;
         socklen_t addr_len = sizeof(addr);
@@ -75,29 +82,24 @@ int main() {
             perror("failed to accept");
             exit(-1);
         }
-
-        
-        printf("end of while loop \n");
         
         char *buffer = (char *)malloc(BUFFER_SIZE * sizeof(char));
 
         ssize_t bytes_revieced = recv(connfd, buffer, BUFFER_SIZE,0);
-        // printf("%.*s",BUFFER_SIZE,buffer);
-        // if (send(connfd, testString, size, 0) < 0 ) {
-        //     perror("error sending");
-        // }
-        // if (write(connfd, testString, size) < 0) {
-        //     perror("could not write header");
-        // }
-        if (send(connfd, myString, file_size, 0) < 0) {
+        printf("%.*s\n",BUFFER_SIZE,buffer);
+
+        long file_length = getFileLength(HTML_FILE_NAME);
+        char responseHtml[file_length];
+        readFile(responseHtml, HTML_FILE_NAME, file_length);
+
+        char *httpTest = createHttpResponse(200, strlen(responseHtml), responseHtml);
+        
+        if (write(connfd, httpTest, strlen(httpTest)) < 0) {
             perror("could not write");
         }
         close(connfd);
-        // printf("%.*s",sizeof(file),file);
     }
 
-    fclose(file);
     close(server_fd);
     return 0;
-
 }
