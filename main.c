@@ -6,9 +6,9 @@
 #include <string.h>
 
 
-int PORT = 1802;
+int PORT = 1800;
 int BUFFER_SIZE = 1000;
-char *HTML_FILE_NAME = "test1.html";
+char *HTML_FILE_NAME = "error.html";
 
 char * createHttpResponse(int status_code, int content_length, char* response_html) {
 
@@ -30,6 +30,7 @@ long getFileLength(char* file_name) {
     long file_size;
     fseek(file, 0, SEEK_END); 
     file_size = ftell(file);
+    fclose(file);
     return(file_size); 
 }
 
@@ -87,6 +88,26 @@ int main() {
 
         ssize_t bytes_revieced = recv(connfd, buffer, BUFFER_SIZE,0);
         printf("%.*s\n",BUFFER_SIZE,buffer);
+        int method_length = strcspn(buffer, " ");
+        char *method;
+        if (memcmp(buffer, "GET", strlen("GET")) == 0) {
+            method = "GET";
+        } 
+
+        buffer += method_length + 1; //move pointer past method
+        
+        size_t url_length = strcspn(buffer, " ");
+        char *url = malloc(url_length);
+        memcpy(url, buffer, url_length);
+
+        if (strcmp(url, "/") == 0) {
+            HTML_FILE_NAME = "index.html";
+        } else if (strcmp(url, "/hello") == 0) {
+            HTML_FILE_NAME = "hello.html";
+        } else {
+            HTML_FILE_NAME = "error.html";
+        }
+
 
         long file_length = getFileLength(HTML_FILE_NAME);
         char responseHtml[file_length];
