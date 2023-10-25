@@ -9,6 +9,7 @@
 int PORT = 1800;
 int BUFFER_SIZE = 1000;
 
+
 char * createHttpResponse(int status_code, int content_length, char* response_html) {
 
     char *response;
@@ -45,21 +46,6 @@ char * readFile(char* strBuffer, char* file_name, long file_length) {
 
     fread(strBuffer, file_length, 1, file);
     fclose(file);
-}
-
-char * readHeader(char* buffer, char* method) {
-        int method_length = strcspn(buffer, " ");
-        // char *method;
-        if (memcmp(buffer, "GET", strlen("GET")) == 0) {
-            method = "GET";
-        } 
-
-        buffer += method_length + 1; //move pointer past method
-        
-        size_t url_length = strcspn(buffer, " ");
-        char *url = (char *)malloc(url_length);
-        memcpy(url, buffer, url_length);
-        return url;
 }
 
 int main() {
@@ -100,25 +86,13 @@ int main() {
             perror("failed to accept");
             exit(-1);
         }
-        
+
         char *buffer = (char *)malloc(BUFFER_SIZE * sizeof(char));
 
-        ssize_t bytes_revieced = recv(connfd, buffer, BUFFER_SIZE,0);
+        ssize_t bytes_revieced = recv(connfd, buffer, BUFFER_SIZE, 0);
         printf("%ld %s\n", bytes_revieced, buffer);
 
-        char *method;
-        char *url = readHeader(buffer, method);
-
-
-        char *file_name;
-        if (strcmp(url, "/") == 0) {
-            file_name = "index.html";
-        } else if (strcmp(url, "/hello") == 0) {
-            file_name = "hello.html";
-        } else {
-            file_name = "error.html";
-        }
-
+        char *file_name = "index.html";
 
         long file_length = getFileLength(file_name);
         char responseHtml[file_length];
@@ -129,6 +103,8 @@ int main() {
         if (write(connfd, httpTest, strlen(httpTest)) < 0) {
             perror("could not write");
         }
+
+
         close(connfd);
     }
 

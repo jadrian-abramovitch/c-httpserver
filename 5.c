@@ -9,6 +9,7 @@
 int PORT = 1800;
 int BUFFER_SIZE = 1000;
 
+
 char * createHttpResponse(int status_code, int content_length, char* response_html) {
 
     char *response;
@@ -100,15 +101,14 @@ int main() {
             perror("failed to accept");
             exit(-1);
         }
-        
+
         char *buffer = (char *)malloc(BUFFER_SIZE * sizeof(char));
 
-        ssize_t bytes_revieced = recv(connfd, buffer, BUFFER_SIZE,0);
+        ssize_t bytes_revieced = recv(connfd, buffer, BUFFER_SIZE, 0);
         printf("%ld %s\n", bytes_revieced, buffer);
 
         char *method;
         char *url = readHeader(buffer, method);
-
 
         char *file_name;
         if (strcmp(url, "/") == 0) {
@@ -119,7 +119,6 @@ int main() {
             file_name = "error.html";
         }
 
-
         long file_length = getFileLength(file_name);
         char responseHtml[file_length];
         readFile(responseHtml, file_name, file_length);
@@ -129,6 +128,8 @@ int main() {
         if (write(connfd, httpTest, strlen(httpTest)) < 0) {
             perror("could not write");
         }
+
+
         close(connfd);
     }
 
